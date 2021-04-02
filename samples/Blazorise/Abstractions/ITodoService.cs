@@ -9,12 +9,12 @@ using Stl.Fusion.Extensions;
 
 namespace Templates.Blazor2.Abstractions
 {
-    public class GetTodoPageRequest
+    public class TodoPageGetRequest
     {
         public PageRef<string> PageRef { get; set; } = null!;
     }
 
-    public class GetTodoPageResponse
+    public class TodoPageGetResponse
     {
         public Todo[]? Todos { get; set; }
         public int TotalItems { get; set; }
@@ -49,6 +49,6 @@ namespace Templates.Blazor2.Abstractions
         [ComputeMethod]
         Task<Todo[]> List(Session session, PageRef<string> pageRef, CancellationToken cancellationToken = default);
         [ComputeMethod]
-        Task<GetTodoPageResponse> GetTodoPage(Session session, GetTodoPageRequest request, CancellationToken cancellationToken = default);
+        Task<TodoPageGetResponse> GetTodoPage(Session session, TodoPageGetRequest request, CancellationToken cancellationToken = default);
     }
 }

@@ -23,6 +23,6 @@ namespace Templates.Blazor2.UI.Services
         [Get("list")]
         Task<Todo[]> List(Session session, PageRef<string> pageRef, CancellationToken cancellationToken = default);
         [Get("getTodoPage")]
-        Task<GetTodoPageResponse> GetTodoPage(Session session, GetTodoPageRequest request, CancellationToken cancellationToken = default);
+        Task<TodoPageGetResponse> GetTodoPage(Session session, TodoPageGetRequest request, CancellationToken cancellationToken = default);
     }
 }

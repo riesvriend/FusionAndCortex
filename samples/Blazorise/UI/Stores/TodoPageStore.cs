@@ -27,12 +27,12 @@ namespace Templates.Blazor2.UI.Stores
     public class TodoPageStore
     {
         protected ITodoService TodoService = default!;
-        protected FusionState<GetTodoPageResponse?> F;
+        protected FusionState<TodoPageGetResponse?> F;
 
         public string? PageResponseAsJson { get; set; }
         public ExceptionStore? FusionQueryException { get; set; }
         public ExceptionStore? FusionCommandException { get; set; }
-        public GetTodoPageRequest? PageRequest { get; set; }
+        public TodoPageGetRequest? PageRequest { get; set; }
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
         public TodoPageStore(
@@ -44,8 +44,8 @@ namespace Templates.Blazor2.UI.Stores
             if (todoService == null)
                 throw new ArgumentNullException(nameof(todoService));
             TodoService = todoService;
-            SetPageRequest(new GetTodoPageRequest { PageRef = new PageRef<string>(Count: 5) });
-            F = new FusionState<GetTodoPageResponse?>(stateFactory, session, commander, ComputeState, OnLiveStateChanged);
+            SetPageRequest(new TodoPageGetRequest { PageRef = new PageRef<string>(Count: 5) });
+            F = new FusionState<TodoPageGetResponse?>(stateFactory, session, commander, ComputeState, OnLiveStateChanged);
             F.GoLive();
         }
 
@@ -53,12 +53,12 @@ namespace Templates.Blazor2.UI.Stores
         {
             Debug.WriteLine($"OnLiveStateChanged {status}. Todos: {F.LiveState?.UnsafeValue?.Todos?.Length} ");
             if (status == FusionStateStatusEnum.InSync && F.LiveState?.HasValue == true)
-                SetGetTodoPageResponse(F.LiveState?.Value);
+                SetPageResponse(F.LiveState?.Value);
             UpdateQueryException();
             SetFusionStatus(status);
         }
 
-        protected async Task<GetTodoPageResponse?> ComputeState(CancellationToken cancellationToken)
+        protected async Task<TodoPageGetResponse?> ComputeState(CancellationToken cancellationToken)
         {
             if (TodoService == null || PageRequest == null)
                 return null;
@@ -68,14 +68,14 @@ namespace Templates.Blazor2.UI.Stores
         }
 
         [Computed]
-        public GetTodoPageResponse? PageResponse {
+        public TodoPageGetResponse? PageResponse {
             get {
-                GetTodoPageResponse? response;
+                TodoPageGetResponse? response;
 
                 if (PageResponseAsJson == null)
                     response = null;
                 else {
-                    response = JsonConvert.DeserializeObject<GetTodoPageResponse>(PageResponseAsJson);
+                    response = JsonConvert.DeserializeObject<TodoPageGetResponse>(PageResponseAsJson);
                     if (response == null)
                         Debugger.Break();
                 }
@@ -91,16 +91,16 @@ namespace Templates.Blazor2.UI.Stores
         public bool HasMore => PageResponse?.HasMore == true;
 
         [Action]
-        public void SetGetTodoPageResponse(GetTodoPageResponse? getTodoPageResponse)
+        public void SetPageResponse(TodoPageGetResponse? todoPageResponse)
         {
-            if (getTodoPageResponse == null)
+            if (todoPageResponse == null)
                 PageResponseAsJson = null;
             else
                 // Consider to pass in the raw JSON from the RestClient when working in WebAssembly
                 // saving the serialization
                 // We do the serialization so that all the derived values are cached and matched by value
                 // automatically saving rerenders if the object tree shape stays similar
-                PageResponseAsJson = JsonConvert.SerializeObject(getTodoPageResponse);
+                PageResponseAsJson = JsonConvert.SerializeObject(todoPageResponse);
 
             Debug.WriteLine($"PageResponseAsJson: {PageResponseAsJson}");
         }
@@ -114,7 +114,7 @@ namespace Templates.Blazor2.UI.Stores
                 return; 
 
             PageRequest.PageRef = PageRequest.PageRef with { Count = PageRequest.PageRef.Count * 2 };
-            // BUG? Why is this not trigger a recompute/call and call to this.ComputeState?
+            // BUG: Why is this not trigger a recompute/call and call to this.ComputeState?
             F.TryInvalidate();  // See if we can make an autorunner for this
         }
 
@@ -191,7 +191,7 @@ namespace Templates.Blazor2.UI.Stores
         }
 
         [Action]
-        public void SetPageRequest(GetTodoPageRequest request)
+        public void SetPageRequest(TodoPageGetRequest request)
         {
             PageRequest = request;
         }

@@ -74,12 +74,12 @@ namespace Templates.Blazor2.Services
             return todoOpts.Where(todo => todo.HasValue).Select(todo => todo.Value).ToArray();
         }
 
-        public virtual async Task<GetTodoPageResponse> GetTodoPage(Session session, GetTodoPageRequest request, CancellationToken cancellationToken = default)
+        public virtual async Task<TodoPageGetResponse> GetTodoPage(Session session, TodoPageGetRequest request, CancellationToken cancellationToken = default)
         {
             var pageRef = request.PageRef ?? new PageRef<string>(Count: 5);
             var getOneMorePagePlusOne = pageRef with { Count = pageRef.Count + 1 };
             var items = await List(session, getOneMorePagePlusOne, cancellationToken);
-            var response = new GetTodoPageResponse {
+            var response = new TodoPageGetResponse {
                 HasMore = items.Length > pageRef.Count,
                 LastUpdatedUtc = DateTime.UtcNow,
                 TotalItems = 100, // todo: make computed method to get count

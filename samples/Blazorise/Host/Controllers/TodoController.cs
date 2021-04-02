@@ -55,7 +55,7 @@ namespace Templates.Blazor2.Host.Controllers
         }
 
         [HttpGet, Publish]
-        public Task<GetTodoPageResponse> GetTodoPage(Session? session, GetTodoPageRequest request, CancellationToken cancellationToken = default)
+        public Task<TodoPageGetResponse> GetTodoPage(Session? session, TodoPageGetRequest request, CancellationToken cancellationToken = default)
         {
             session ??= _sessionResolver.Session;
             return _todoService.GetTodoPage(session, request, cancellationToken);
