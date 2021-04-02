@@ -5,7 +5,6 @@
 @using Templates.Blazor2.UI.Stores
 @attribute [Observer]
 @inject AuthStateProvider AuthStateProvider
-@inject AppStore appStore
 @inject TodoPageStore todoPageStore
 
 @{
@@ -18,7 +17,6 @@
 <Text Margin="Margin.Is1.OnY">
     Updated: <b><MomentsAgoBadge Value="@todoPageStore.LastStateUpdateTimeUtc" /></b>
 </Text>
-<p>Created: @appStore.CurrentTime</p>
 
 <AuthorizeView>
     <NotAuthorized>
@@ -31,12 +29,14 @@
             <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnTablet">
                 @{
                     // TODO: The computed value 'PageResponse' is null when the render is triggered by Fusion's
-                    //          AuthState param below
+                    //          AuthState param below. High road Workaround is to move the Auth info also into a Cortex model
+                    //          as everything should go in there anyway.
                     var response = todoPageStore.PageResponse;
                     var todos = response?.Todos;
                 }
                 @if (todos == null)
                 {
+                    //Todo: Dump stack to debug window to find who triggered this render
                     <span>Null Todos</span>
                 }
                 else if (todos.Length == 0)
@@ -47,21 +47,7 @@
                 {
                     foreach (var todo in todos)
                     {
-                        <Addons Margin="Margin.Is3.OnY">
-                            <Addon AddonType="AddonType.Start">
-                                <AddonLabel>
-                                    <Blazorise.Icon Name="@(todo.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
-                                                    @onclick="_ => InvertDone(todo)" />
-                                </AddonLabel>
-                            </Addon>
-                            <TextEdit TextChanged="text => UpdateTitle(todo, text)" ChangeTextOnKeyPress="false"
-                                      Text="@todo.Title" />
-                            <Addon AddonType="AddonType.End">
-                                <Button Clicked="_ => Remove(todo)" Color="Color.Warning">
-                                    <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
-                                </Button>
-                            </Addon>
-                        </Addons>
+                        <TodoItem @key="@todo.Id" Item="@todo" />
                     }
                 }
 
@@ -100,20 +86,7 @@
         todoPageStore.LoadMore();
     }
 
-    private Task InvertDone(Todo todo)
-    {
-        return todoPageStore.ToggleDone(todo);
-    }
-
-    private Task UpdateTitle(Todo todo, string title)
-    {
-        return todoPageStore.UpdateTitle(todo, title);
-    }
-
-    private Task Remove(Todo todo)
-    {
-        return todoPageStore.Remove(todo);
-    }
+  
 
     private Task Create()
     {

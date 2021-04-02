@@ -1,0 +1,7 @@
+@inject AppStore appStore
+@* <Observer> is needed in Layouts because attribute [Observer] does not work in them
+    https://jspuij.github.io/Cortex.Net.Docs/pages/observer.html
+*@
+<Observer>
+    <p style="color:yellow;text-align: center">Current time: @appStore?.CurrentUtcTime</p>
+</Observer>

@@ -27,15 +27,15 @@ namespace Templates.Blazor2.UI.Stores
     public class TodoPageStore
     {
         protected ITodoService TodoService = default!;
-        protected LiveStateStore<GetTodoPageResponse> F;
+        protected FusionState<GetTodoPageResponse?> F;
 
         public string? PageResponseAsJson { get; set; }
         public ExceptionStore? FusionQueryException { get; set; }
         public ExceptionStore? FusionCommandException { get; set; }
-        public GetTodoPageRequest PageRequest { get; set; }
+        public GetTodoPageRequest? PageRequest { get; set; }
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
-        public TodoPageStore(ISharedState sharedState,
+        public TodoPageStore(
             IStateFactory stateFactory,
             Session session,
             ITodoService todoService,
@@ -44,13 +44,12 @@ namespace Templates.Blazor2.UI.Stores
             if (todoService == null)
                 throw new ArgumentNullException(nameof(todoService));
             TodoService = todoService;
-            SetGetTodoPageRequest(new GetTodoPageRequest { PageRef = new PageRef<string>(Count: 5) });
-
-            F = new LiveStateStore<GetTodoPageResponse>(sharedState, stateFactory, session, commander, ComputeState);
-            F.OnLiveStateChanged += F_OnLiveStateChanged;
+            SetPageRequest(new GetTodoPageRequest { PageRef = new PageRef<string>(Count: 5) });
+            F = new FusionState<GetTodoPageResponse?>(stateFactory, session, commander, ComputeState, OnLiveStateChanged);
+            F.GoLive();
         }
 
-        private void F_OnLiveStateChanged(object? sender, FusionStateStatusEnum status)
+        private void OnLiveStateChanged(FusionStateStatusEnum status)
         {
             Debug.WriteLine($"OnLiveStateChanged {status}. Todos: {F.LiveState?.UnsafeValue?.Todos?.Length} ");
             if (status == FusionStateStatusEnum.InSync && F.LiveState?.HasValue == true)
@@ -59,8 +58,14 @@ namespace Templates.Blazor2.UI.Stores
             SetFusionStatus(status);
         }
 
-        protected Task<GetTodoPageResponse> ComputeState(CancellationToken cancellationToken) =>
-            TodoService.GetTodoPage(F.Session, PageRequest, cancellationToken);
+        protected async Task<GetTodoPageResponse?> ComputeState(CancellationToken cancellationToken)
+        {
+            if (TodoService == null || PageRequest == null)
+                return null;
+
+            var session = F.Session;
+            return await TodoService.GetTodoPage(session, PageRequest, cancellationToken);
+        }
 
         [Computed]
         public GetTodoPageResponse? PageResponse {
@@ -103,7 +108,13 @@ namespace Templates.Blazor2.UI.Stores
         [Action]
         public void LoadMore()
         {
+            if (PageRequest == null)
+                // workaround: PageRequest can be non-nullable because the constructor cant assign a value, only [Actions] can.
+                // But is initialized anyway in the constructor but intellisense does not see that
+                return; 
+
             PageRequest.PageRef = PageRequest.PageRef with { Count = PageRequest.PageRef.Count * 2 };
+            // BUG? Why is this not trigger a recompute/call and call to this.ComputeState?
             F.TryInvalidate();  // See if we can make an autorunner for this
         }
 
@@ -180,7 +191,7 @@ namespace Templates.Blazor2.UI.Stores
         }
 
         [Action]
-        public void SetGetTodoPageRequest(GetTodoPageRequest request)
+        public void SetPageRequest(GetTodoPageRequest request)
         {
             PageRequest = request;
         }

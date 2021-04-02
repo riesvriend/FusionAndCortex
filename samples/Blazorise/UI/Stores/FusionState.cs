@@ -20,10 +20,9 @@ namespace Templates.Blazor2.UI.Stores
     /// Wrapper for use in a Cortrex store to keep subscribed to one or more
     /// FusionLiveStates
     /// </summary>
-    public class LiveStateStore<T> : IDisposable
+    public class FusionState<T> : IDisposable
     {
         protected IStateFactory StateFactory;
-        protected ISharedState SharedState;
         public Session Session;
         public ICommander Commander;
         private bool _disposedValue;
@@ -32,14 +31,13 @@ namespace Templates.Blazor2.UI.Stores
         public ILiveState<T>? LiveState { get; set; }
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
-        public LiveStateStore(
-            ISharedState sharedState,
+        public FusionState(
             IStateFactory stateFactory,
             Session session,
             ICommander commander,
-            Func<CancellationToken, Task<T>> computeState)
+            Func<CancellationToken, Task<T>> computeState,
+            Action<FusionStateStatusEnum> onLiveStateChanged)
         {
-            SharedState = sharedState;
             StateFactory = stateFactory;
             Session = session;
             Commander = commander;
@@ -47,14 +45,16 @@ namespace Templates.Blazor2.UI.Stores
             HandleStateChangedInternal = (state, eventKind) => {
                 var status = CurrentFusionStateStatus();
                 //if (eventKind == StateEventKind.Updated)
-                OnLiveStateChanged?.Invoke(this, status);
+                onLiveStateChanged(status);
             };
-
-            LiveState = CreateState();
-            ((IState)LiveState).AddEventHandler(StateEventKind.All, HandleStateChangedInternal);
         }
 
-        public event EventHandler<FusionStateStatusEnum>? OnLiveStateChanged;
+        // Cant do this from constructur as the ComputeState delegate can be called before the constructor is finished causing a race condition
+        public void GoLive()
+        {
+            LiveState = StateFactory.NewLive<T>(ConfigureState, computer: (_, ct) => ComputeState(ct), argument: this);
+            ((IState)LiveState).AddEventHandler(StateEventKind.All, HandleStateChangedInternal);
+        }
 
         public FusionStateStatusEnum CurrentFusionStateStatus()
         {
@@ -70,11 +70,7 @@ namespace Templates.Blazor2.UI.Stores
             return status;
         }
 
-        protected ILiveState<T> CreateState()
-        {
-            return StateFactory.NewLive<T>(ConfigureState, computer: (_, ct) => ComputeState(ct), argument: this);
-        }
-
+        
         protected virtual void ConfigureState(LiveState<T>.Options options) { }
 
         protected virtual void Dispose(bool disposing)

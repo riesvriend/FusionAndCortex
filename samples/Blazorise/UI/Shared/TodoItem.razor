@@ -1,0 +1,61 @@
+@using Cortex.Net.Blazor
+@using Templates.Blazor2.Abstractions
+@attribute [Observer]
+@implements IHandleEvent
+@inject TodoPageStore todoPageStore
+
+@{
+    Debug.WriteLine($"Rendering Item {Newtonsoft.Json.JsonConvert.SerializeObject(Item)}");
+}
+
+<Addons Margin="Margin.Is3.OnY">
+    <Addon AddonType="AddonType.Start">
+        <AddonLabel>
+            <Blazorise.Icon Name="@(Item.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
+                            @onclick="_ => InvertDone(Item)" />
+        </AddonLabel>
+    </Addon>
+    <TextEdit TextChanged="text => UpdateTitle(Item, text)" ChangeTextOnKeyPress="false"
+              Text="@Item.Title" />
+    <Addon AddonType="AddonType.End">
+        <Button Clicked="_ => Remove(Item)" Color="Color.Warning">
+            <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
+        </Button>
+    </Addon>
+</Addons>
+
+@code {
+    [Parameter, ParameterComparer(typeof(ByValueParameterComparer))]
+    public Todo Item { get; set; } = null!;
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        // The TextEdit component is a 'controlled component' in React terms. This means that on a rerender
+        // the current value from the store/model is pushed in the the text field, potentially overriding the users pending input.
+        // To help keep the users input in the box, we suppress StateHasChanged render triggers to the text box unless the todo
+        // item really changed in the store
+        if (this.HasChangedParameters(parameters))
+            return base.SetParametersAsync(parameters);
+        else
+            return Task.CompletedTask;
+    }
+
+    // https://github.com/dotnet/aspnetcore/issues/18919
+    Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem callback, object? arg)
+        => callback.InvokeAsync(arg);
+
+    private Task InvertDone(Todo todo)
+    {
+        return todoPageStore.ToggleDone(todo);
+    }
+
+    private Task UpdateTitle(Todo todo, string title)
+    {
+        return todoPageStore.UpdateTitle(todo, title);
+    }
+
+    private Task Remove(Todo todo)
+    {
+        return todoPageStore.Remove(todo);
+    }
+}

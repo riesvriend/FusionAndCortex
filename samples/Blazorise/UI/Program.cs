@@ -140,7 +140,7 @@ namespace Templates.Blazor2.UI
                 var commander = s.GetRequiredService<ICommander>();
                 var session = s.GetRequiredService<Stl.Fusion.Authentication.Session>();
                 return sharedState.Observable(() => {
-                    var s = new TodoPageStore(sharedState, stateFactory, session, todoService, commander);
+                    var s = new TodoPageStore(stateFactory, session, todoService, commander);
                     return s;
                 });
             });
