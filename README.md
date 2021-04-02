@@ -4,11 +4,11 @@ See the project [Blazorise](https://github.com/riesvriend/FusionAndCortex/tree/m
 
 Done:
 * created observable stores: [AppStore](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Stores/AppStore.cs) and [TodoPageStore](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Stores/TodoPageStore.cs) 
-* AppStore has a simple timer and shows as a [clock](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/LeftBarClock.razor) in the [main layout(https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/MainLayout.razor)
+* AppStore has a simple timer and shows as a [clock](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/LeftBarClock.razor) in the [main layout](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/MainLayout.razor)
 * TodoPageStore contains the client-side state for the todo page, such as current page size and page marker. It 
-  also contains a LiveState reference to the server-side DTO for this page. This DTO (TodoPageResponse) contains
-  the currently visible todo-items and its auto-invalidated and refreshed on the client by Fusion when update command
-  commands are executed.
+  also contains a Fusion LiveState reference that is subscribed to changes impacting the [TodoPageResponse](https://github.com/riesvriend/FusionAndCortex/blob/b6f31480bfb6b856e8423feba6cd61bf3dc1fa80/samples/Blazorise/Abstractions/ITodoService.cs#L17). This DTO contains
+  the currently visible todo-items and it is auto-requeried by Fusion when update command
+  commands are executed that affect related data in the database.
 * Extracted all logic from the [todopage.razor](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Pages/TodoPage.razor), making it a render-only component
 * The stores are testable without the need of UI-component testers using a model that very 
   closely matches the actual UI components. Testers still to be implemented.
