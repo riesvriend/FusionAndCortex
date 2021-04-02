@@ -25,7 +25,8 @@ namespace Templates.Blazor2.Services
 
         public virtual async Task<Todo> AddOrUpdate(AddOrUpdateTodoCommand command, CancellationToken cancellationToken = default)
         {
-            if (Computed.IsInvalidating()) return default!;
+            if (Computed.IsInvalidating())
+                return default!;
             var (session, todo) = command;
             var user = await _auth.GetUser(session, cancellationToken);
             user.MustBeAuthenticated();
@@ -39,7 +40,8 @@ namespace Templates.Blazor2.Services
 
         public virtual async Task Remove(RemoveTodoCommand command, CancellationToken cancellationToken = default)
         {
-            if (Computed.IsInvalidating()) return;
+            if (Computed.IsInvalidating())
+                return;
             var (session, id) = command;
             var user = await _auth.GetUser(session, cancellationToken);
             user.MustBeAuthenticated();
@@ -72,10 +74,24 @@ namespace Templates.Blazor2.Services
             return todoOpts.Where(todo => todo.HasValue).Select(todo => todo.Value).ToArray();
         }
 
+        public virtual async Task<GetTodoPageResponse> GetTodoPage(Session session, GetTodoPageRequest request, CancellationToken cancellationToken = default)
+        {
+            var items = await List(session, request.PageRef ?? new PageRef<string>(), cancellationToken);
+            var response = new GetTodoPageResponse {
+                HasMore = items.Length > request.PageSize,
+                LastUpdatedUtc = DateTime.UtcNow,
+                TotalItems = 100, // todo: make computed method to get count
+            };
+            if (response.HasMore)
+                items = items[0..request.PageSize];
+            response.Todos = items;
+            return response;
+        }
+            
         // Private methods
 
         private string GetTodoKey(User user, string id)
-            => $"{GetTodoKeyPrefix(user)}/{id}";
+        => $"{GetTodoKeyPrefix(user)}/{id}";
 
         private string GetTodoKeyPrefix(User user)
             => $"todo/{user.Id}/items";

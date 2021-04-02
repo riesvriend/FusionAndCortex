@@ -1,11 +1,9 @@
-@*@attribute [Observer]*@
+@attribute [Observer]
 @inject AppStore appStore
+
 <Layout Sider="true">
     <LayoutSider>
         <LayoutSiderContent>
-            @* <Observer> is needed in Layouts because attribute [Observer] does not work in them
-                https://jspuij.github.io/Cortex.Net.Docs/pages/observer.html
-            *@
             <Observer>
                 <p style="color:yellow">Current ! time: @appStore?.CurrentTime</p>
             </Observer>
@@ -21,6 +19,7 @@
         </LayoutContent>
     </Layout>
 </Layout>
+
 
 @code {
     [Parameter]

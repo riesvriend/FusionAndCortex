@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
   <PropertyGroup>
+    
     <OutputType>Exe</OutputType>
     <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
     <RootNamespace>Templates.Blazor2.UI</RootNamespace>
@@ -7,6 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Cortex.Net" />
+    <PackageReference Include="Cortex.Net.Blazor" />
     <PackageReference Include="Blazorise" />
     <PackageReference Include="Blazorise.Bootstrap" />
     <PackageReference Include="Blazorise.DataGrid" />

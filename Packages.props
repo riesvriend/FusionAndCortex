@@ -13,9 +13,12 @@
     <BlazoriseVersion>0.9.*</BlazoriseVersion>
     <SystemNetHttpJsonVersion>5.0.3</SystemNetHttpJsonVersion>
     <StlFusionVersion>0.*</StlFusionVersion>
+    <CortexNetVersion>0.*</CortexNetVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Nupkg Versions">
+    <PackageReference Update="Cortex.Net" Version="$(CortexNetVersion)" />
+    <PackageReference Update="Cortex.Net.Blazor" Version="$(CortexNetVersion)" />
     <PackageReference Update="AspNet.Security.OAuth.GitHub" Version="5.0.3" />
     <PackageReference Update="Blazorise" Version="$(BlazoriseVersion)" />
     <PackageReference Update="Blazorise.Bootstrap" Version="$(BlazoriseVersion)" />

@@ -13,12 +13,12 @@ namespace Templates.Blazor2.Host.Controllers
     [ApiController, JsonifyErrors]
     public class TodoController : ControllerBase, ITodoService
     {
-        private readonly ITodoService _todos;
+        private readonly ITodoService _todoService;
         private readonly ISessionResolver _sessionResolver;
 
-        public TodoController(ITodoService todos, ISessionResolver sessionResolver)
+        public TodoController(ITodoService todoService, ISessionResolver sessionResolver)
         {
-            _todos = todos;
+            _todoService = todoService;
             _sessionResolver = sessionResolver;
         }
 
@@ -28,14 +28,14 @@ namespace Templates.Blazor2.Host.Controllers
         public Task<Todo> AddOrUpdate([FromBody] AddOrUpdateTodoCommand command, CancellationToken cancellationToken = default)
         {
             command.UseDefaultSession(_sessionResolver);
-            return _todos.AddOrUpdate(command, cancellationToken);
+            return _todoService.AddOrUpdate(command, cancellationToken);
         }
 
         [HttpPost]
         public Task Remove([FromBody] RemoveTodoCommand command, CancellationToken cancellationToken = default)
         {
             command.UseDefaultSession(_sessionResolver);
-            return _todos.Remove(command, cancellationToken);
+            return _todoService.Remove(command, cancellationToken);
         }
 
         // Queries
@@ -44,14 +44,21 @@ namespace Templates.Blazor2.Host.Controllers
         public Task<Todo?> TryGet(Session? session, string id, CancellationToken cancellationToken = default)
         {
             session ??= _sessionResolver.Session;
-            return _todos.TryGet(session, id, cancellationToken);
+            return _todoService.TryGet(session, id, cancellationToken);
         }
 
         [HttpGet, Publish]
         public Task<Todo[]> List(Session? session, PageRef<string> pageRef, CancellationToken cancellationToken = default)
         {
             session ??= _sessionResolver.Session;
-            return _todos.List(session, pageRef, cancellationToken);
+            return _todoService.List(session, pageRef, cancellationToken);
+        }
+
+        [HttpGet, Publish]
+        public Task<GetTodoPageResponse> GetTodoPage(Session? session, GetTodoPageRequest request, CancellationToken cancellationToken = default)
+        {
+            session ??= _sessionResolver.Session;
+            return _todoService.GetTodoPage(session, request, cancellationToken);
         }
     }
 }

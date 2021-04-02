@@ -1,0 +1,28 @@
+<Text Margin="Margin.Is1.OnY">
+    <span>Component state: </span>
+    @if (FusionStateStatus == FusionStateStatusEnum.Loading)
+    {
+        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+        <b>Loading...</b>
+    }
+    else if (FusionStateStatus == FusionStateStatusEnum.Updating)
+    {
+        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+        <b>Updating...</b>
+    }
+    else if (FusionStateStatus == FusionStateStatusEnum.UpdatePending)
+    {
+        <div class="spinner-grow spinner-grow-sm text-secondary" role="status"></div>
+        <b class="text-secondary">Update pending...</b>
+    }
+    else
+    {
+        <span class="oi oi-check" aria-hidden="true"></span>
+        <b>In sync.</b>
+    }
+</Text>
+
+@code {
+    [Parameter]
+    public FusionStateStatusEnum FusionStateStatus { get; set; }
+}

@@ -1,41 +1,62 @@
 @page "/todo"
 @using System.Threading
-@inherits LiveComponentBase<Todo[]>
+@using Templates.Blazor2.Abstractions
+@using Cortex.Net.Blazor
+@using Templates.Blazor2.UI.Stores
 @inject ITodoService Todos
 @inject Session Session
-@inject CommandRunner CommandRunner
 @inject AuthStateProvider AuthStateProvider
 
-@{
-    Debug.WriteLine($"Rendering TodoPage. ConsistencyState: {State.Computed.ConsistencyState}");
-    var error = State.Error;
-    var todos = State.UnsafeValue ?? Array.Empty<Todo>(); // UnsafeValue returns default if there is an Error
-}
+@attribute [Observer]
+@inject AppStore appStore
+@inject TodoPageStore todoPageStore
 
 <h1>Todo List</h1>
 
-<StateOfStateBadge State="@State" />
+<FusionStateStatusBadge FusionStateStatus="@todoPageStore.FusionStateStatus" />
+
 <Text Margin="Margin.Is1.OnY">
-    Updated: <b><MomentsAgoBadge Value="LastStateUpdateTime" /></b>
+    Updated: <b><MomentsAgoBadge Value="@todoPageStore.LastStateUpdateTimeUtc" /></b>
 </Text>
+<p>Created: @appStore.CurrentTime</p>
 
 <AuthorizeView>
     <NotAuthorized>
         <SignInDropdown Why="to use this page" />
     </NotAuthorized>
     <Authorized>
-        <WhenException Exception="error" />
-        <WhenCommandError Exception="CommandRunner.Error" />
+        <WhenException2 Exception="@todoPageStore.FusionQueryException" />
+        <WhenException2 Exception="@todoPageStore.FusionCommandException" Title="Update failed!" />
         <Row>
             <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnTablet">
-                @foreach (var todo in todos) {
-                    <TodoItem @key="@todo.Id" Value="@todo" />
-                }
+                @{
+                    var todos = todoPageStore.GetTodoPageResponse?.Todos;
+                    if (todos != null)
+                        foreach (var todo in todos)
+                        {
+                            <Addons Margin="Margin.Is3.OnY">
+                                <Addon AddonType="AddonType.Start">
+                                    <AddonLabel>
+                                        <Blazorise.Icon Name="@(todo.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
+                                                        @onclick="_ => InvertDone(todo)" />
+                                    </AddonLabel>
+                                </Addon>
+                                <TextEdit TextChanged="text => UpdateTitle(todo, text)" ChangeTextOnKeyPress="false"
+                                          Text="@todo.Title" />
+                                <Addon AddonType="AddonType.End">
+                                    <Button Clicked="_ => Remove(todo)" Color="Color.Warning">
+                                        <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
+                                    </Button>
+                                </Addon>
+                            </Addons>
+                        }
 
-                @if (HasMore) {
-                    <Button Clicked="_ => LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
-                        Load more <Blazorise.Icon Name="FontAwesomeIcons.AngleDoubleDown" />
-                    </Button>
+                    if (todoPageStore.HasMore)
+                    {
+                        <Button Clicked="_ => LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
+                            Load more <Blazorise.Icon Name="FontAwesomeIcons.AngleDoubleDown" />
+                        </Button>
+                    }
                 }
 
                 <Form @onsubmit="_ => Create()" Margin="Margin.Is3.OnY">
@@ -53,42 +74,36 @@
     </Authorized>
 </AuthorizeView>
 
+
 @code {
-    private int PageSize { get; set; } = 5;
-    private bool HasMore { get; set; }
     private string NewTodoTitle { get; set; } = "";
-    private DateTime LastStateUpdateTime { get; set; } = DateTime.UtcNow;
     // AuthState property below seemingly does nothing, right?
     // But try to comment out this line & sign-in + sign-out. See the error badge stays there for a while now?
     // Check your explanation on our Discord: https://discord.gg/EKEwv6d
     [CascadingParameter] protected Task<AuthState> AuthState { get; set; } = null!;
 
-    protected override void OnInitialized()
-    {
-        CommandRunner.Component = this;
-        base.OnInitialized();
-    }
-
-    protected override async Task<Todo[]> ComputeState(CancellationToken cancellationToken)
-    {
-        var items = await Todos.List(Session, PageSize + 1, cancellationToken);
-        HasMore = items.Length > PageSize;
-        if (HasMore)
-            items = items[0..PageSize];
-        LastStateUpdateTime = DateTime.UtcNow;
-        return items;
-    }
-
     private void LoadMore()
     {
-        PageSize *= 2;
-        InvalidateState();
+        todoPageStore.LoadMore();
+    }
+
+    private Task InvertDone(Todo todo)
+    {
+        return todoPageStore.ToggleDone(todo);
+    }
+
+    private Task UpdateTitle(Todo todo, string title)
+    {
+        return todoPageStore.UpdateTitle(todo, title);
+    }
+
+    private Task Remove(Todo todo)
+    {
+        return todoPageStore.Remove(todo);
     }
 
     private Task Create()
     {
-        var todo = new Todo("", NewTodoTitle);
-        NewTodoTitle = "";
-        return CommandRunner.Call(new AddOrUpdateTodoCommand(Session, todo));
+        return todoPageStore.CreateTodo(NewTodoTitle);
     }
 }
