@@ -47,7 +47,7 @@ namespace Templates.Blazor2.UI.Stores
             if (todoService == null)
                 throw new ArgumentNullException(nameof(todoService));
             TodoService = todoService;
-            SetGetTodoPageRequest(new GetTodoPageRequest { PageRef = new PageRef<string>(), PageSize = 5 });
+            SetGetTodoPageRequest(new GetTodoPageRequest { PageRef = 5 + 1, PageSize = 5 });
 
             F = new LiveStateStore<GetTodoPageResponse>(sharedState, stateFactory, session, commander, ComputeState);
             F.OnLiveStateChanged += F_OnLiveStateChanged;
