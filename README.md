@@ -6,10 +6,10 @@ Key Benefits
 * End-to-end Real Time, from database to multiple hosts and multiple Blazor clients; thanks to Fusion.
 * The Cortex Store architecture enables:
   * Isolation of UI state and update logic into an observable model. 
-  * Efficient rendering without the need to implement Blazor's [ShouldComponentRender](https://docs.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-5.0) in the components.
+  * Efficient rendering without the need to implement Blazor's [ShouldComponentRender](https://docs.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-5.0) nor to strategically call [StateHasChanged](https://docs.microsoft.com/en-us/aspnet/core/blazor/components/rendering?view=aspnetcore-5.0).
+  * This translates to good scalability of complex user interfaces. All components can be simple, 'Pure'; free of complex code and side-effects or inter-component rendering dependencies. All logic is testable and delegated away into the Actions in the stores.
   * Testing the stores is a good substitute for testing the actual Blazor components and much easier.
-  * Good scalability of complex user interfaces. All components can be simple, 'Pure'; free of complex code and side-effects or inter-component rendering dependencies. All code is testable and delegated away into the Actions in the stores.
-
+  
 Done:
 * created observable stores: [AppStore](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Stores/AppStore.cs) and [TodoPageStore](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Stores/TodoPageStore.cs) 
 * AppStore has a simple timer and shows as a [clock](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/LeftBarClock.razor) in the [main layout](https://github.com/riesvriend/FusionAndCortex/blob/master/samples/Blazorise/UI/Shared/MainLayout.razor)
