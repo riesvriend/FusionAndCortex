@@ -12,13 +12,13 @@
     <Addon AddonType="AddonType.Start">
         <AddonLabel>
             <Blazorise.Icon Name="@(Item.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
-                            @onclick="_ => InvertDone(Item)" />
+                            @onclick="_ => todoPageStore.ToggleDone(Item)" />
         </AddonLabel>
     </Addon>
-    <TextEdit TextChanged="text => UpdateTitle(Item, text)" ChangeTextOnKeyPress="false"
+    <TextEdit TextChanged="text => todoPageStore.UpdateTitle(Item, text)" ChangeTextOnKeyPress="false"
               Text="@Item.Title" />
     <Addon AddonType="AddonType.End">
-        <Button Clicked="_ => Remove(Item)" Color="Color.Warning">
+        <Button Clicked="_ => todoPageStore.Remove(Item)" Color="Color.Warning">
             <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
         </Button>
     </Addon>
@@ -32,8 +32,9 @@
     {
         // The TextEdit component is a 'controlled component' in React terms. This means that on a rerender
         // the current value from the store/model is pushed in the the text field, potentially overriding the users pending input.
-        // To help keep the users input in the box, we suppress StateHasChanged render triggers to the text box unless the todo
-        // item really changed in the store
+        // To prevent resetting the user's input, we suppress StateHasChanged render triggers to the text box unless the todo
+        // item really changed in the store. If the item has not changed by value, we don't call the base method which would
+        // in turn call this.StateHasChanged and render.
         if (this.HasChangedParameters(parameters))
             return base.SetParametersAsync(parameters);
         else
@@ -42,20 +43,7 @@
 
     // https://github.com/dotnet/aspnetcore/issues/18919
     Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem callback, object? arg)
+        // Similary, on tabbing out of the text box, suppress the call to StateHasChanged that the Blazor
+        // framework normally does.
         => callback.InvokeAsync(arg);
-
-    private Task InvertDone(Todo todo)
-    {
-        return todoPageStore.ToggleDone(todo);
-    }
-
-    private Task UpdateTitle(Todo todo, string title)
-    {
-        return todoPageStore.UpdateTitle(todo, title);
-    }
-
-    private Task Remove(Todo todo)
-    {
-        return todoPageStore.Remove(todo);
-    }
 }

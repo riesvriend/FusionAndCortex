@@ -1,3 +1,30 @@
+Playground project combining Stl.Fusion and Cortex.Net
+
+See the samples\Blazorise project. It is an adaptation of the Fusion Blazorise todo list sample app.
+
+Done:
+x created observable stores: AppStore and TodoPageStore using Cortex.Net
+x AppStore has a simple timer and shows as a clock in the left Drawer AppBar
+x TodoPageStore contains the client-side state for the todo page, such as current page size and page marker. It 
+  also contains a LiveState reference to the server-side DTO for this page. This DTO (TodoPageResponse) contains
+  the currently visible todo-items and its auto-invalidated and refreshed on the client by Fusion when update command
+  commands are executed.
+x Extracted all logic from the todopage.razor, making it a render-only component
+x The stores potentially are testable without the need of UI-component testers using a model that very 
+  closely matches the actual UI components
+
+ Issues and Todos
+ - When more than 5 (the default page size) todo's exist, The MORE button appears. It invalidates the LiveState
+   which should trigger a recompute/fetch of the TodoPageResponse. However, this somehow is broken. Needs analysis.
+ - The Fusion Auth state is not yet live-plugged to the TodoPageStore, hence after login, the Todolist does not 
+   immediately appear yet.
+ - WebAssembly mode fails on DI injecting ISessionProvider into the TodoPageStore. Needs analysis.
+   Debug output: Cannot resolve scoped service 'Stl.Fusion.Authentication.ISessionProvider' from root provider.
+ 
+
+
+-------------
+
 ![](docs/img/Banner.gif)
 
 > All project updates are published on its [Discord Server]; it's also the best place for Q/A.\

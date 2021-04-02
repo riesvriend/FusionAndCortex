@@ -36,7 +36,7 @@
                 }
                 @if (todos == null)
                 {
-                    //Todo: Dump stack to debug window to find who triggered this render
+                    // Todo: Dump stack to debug window to find who triggered this render
                     <span>Null Todos</span>
                 }
                 else if (todos.Length == 0)
@@ -53,12 +53,12 @@
 
                 @if (todoPageStore.HasMore)
                 {
-                    <Button Clicked="_ => LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
+                    <Button Clicked="_ => todoPageStore.LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
                         Load more <Blazorise.Icon Name="FontAwesomeIcons.AngleDoubleDown" />
                     </Button>
                 }
 
-                <Form @onsubmit="_ => Create()" Margin="Margin.Is3.OnY">
+                <Form @onsubmit="_ => todoPageStore.CreateTodo(NewTodoTitle)" Margin="Margin.Is3.OnY">
                     <Addons>
                         <Addon AddonType="AddonType.Start">
                             <Button Type="@ButtonType.Submit" Color="Color.Primary">
@@ -75,21 +75,12 @@
 
 
 @code {
+    // TODO: move this field into the todopage store
     private string NewTodoTitle { get; set; } = "";
+
+    // TODO: Move this into the Store, and auto-invalidate/render via the Cortex model.
     // AuthState property below seemingly does nothing, right?
     // But try to comment out this line & sign-in + sign-out. See the error badge stays there for a while now?
     // Check your explanation on our Discord: https://discord.gg/EKEwv6d
     // [CascadingParameter] protected Task<AuthState> AuthState { get; set; } = null!;
-
-    private void LoadMore()
-    {
-        todoPageStore.LoadMore();
-    }
-
-  
-
-    private Task Create()
-    {
-        return todoPageStore.CreateTodo(NewTodoTitle);
-    }
 }
