@@ -5,14 +5,14 @@ root = true
 charset = utf-8
 
 # YAML Files
-[*.{yml,yaml}]
+[*.yml,*.yaml, *.csproj, *.xml]
 indent_size = 2
 
 # Markdown Files
 [*.md]
 trim_trailing_whitespace = false
 
-[*.cs, *.js, *.tsx]
+[*.js, *.tsx]
 indent_size = 4
 indent_style = space
 trim_trailing_whitespace = true
@@ -20,8 +20,15 @@ insert_final_newline = true
 end_of_line = lf
 
 [*.cs]
+# VS.NET does not merge settings from sections above that also contain *.cs, therefore each file type has 
+# all settings for each file in its own block
 # Indentation options
 # https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference#
+indent_size = 4
+indent_style = space
+trim_trailing_whitespace = true
+insert_final_newline = true
+end_of_line = lf
 
 csharp_indent_case_contents = true
 csharp_indent_block_contents = true
