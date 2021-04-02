@@ -34,10 +34,10 @@ namespace Templates.Blazor2.UI.Stores
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
         public LiveStateStore(
-            ISharedState sharedState, 
-            IStateFactory stateFactory, 
+            ISharedState sharedState,
+            IStateFactory stateFactory,
             Session session,
-            ICommander commander, 
+            ICommander commander,
             Func<CancellationToken, Task<T>> computeState)
         {
             SharedState = sharedState;
@@ -47,8 +47,8 @@ namespace Templates.Blazor2.UI.Stores
             ComputeState = computeState;
             HandleStateChangedInternal = (state, eventKind) => {
                 var status = CurrentFusionStateStatus();
-                if (eventKind == StateEventKind.Updated)
-                    OnLiveStateChanged?.Invoke(this, status);
+                //if (eventKind == StateEventKind.Updated)
+                OnLiveStateChanged?.Invoke(this, status);
             };
             EnsureCreate();
         }
@@ -145,7 +145,7 @@ namespace Templates.Blazor2.UI.Stores
         /// <param name="cancellationDelay">The delay between this call and update delay cancellation.
         /// The default (null) means it's governed by <see cref="IUpdateDelayer{T}"/>, which does this
         /// in 50ms by default.</param>
-        public void Requery(bool cancelUpdateDelay = true, TimeSpan? cancellationDelay = null)
+        public void TryInvalidate(bool cancelUpdateDelay = true, TimeSpan? cancellationDelay = null)
         {
             LiveState?.Invalidate();
             if (cancelUpdateDelay)

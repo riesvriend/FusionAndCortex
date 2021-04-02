@@ -106,6 +106,13 @@ namespace Templates.Blazor2.UI
                 fusion.AddLiveClock();
             });
 
+            // This method registers services marked with any of ServiceAttributeBase descendants, including:
+            // [Service], [ComputeService], [RestEaseReplicaService], [LiveStateUpdater]
+            services.UseAttributeScanner().AddServicesFrom(Assembly.GetExecutingAssembly());
+        }
+
+        public static void ConfigureCortexServices(IServiceCollection services)
+        {
             // https://jspuij.github.io/Cortex.Net.Docs/pages/sharedstate.html
             services.AddCortexService<ISharedState>(sp => {
                 // create an instance using the configuration
@@ -120,13 +127,6 @@ namespace Templates.Blazor2.UI
                 return sharedState;
             });
 
-            // This method registers services marked with any of ServiceAttributeBase descendants, including:
-            // [Service], [ComputeService], [RestEaseReplicaService], [LiveStateUpdater]
-            services.UseAttributeScanner().AddServicesFrom(Assembly.GetExecutingAssembly());
-        }
-
-        public static void ConfigureCortexServices(IServiceCollection services)
-        {
             services.AddCortexService<AppStore>(s => {
                 var sharedState = s.GetRequiredService<ISharedState>();
                 var appStore = sharedState.Observable(() => new AppStore { });

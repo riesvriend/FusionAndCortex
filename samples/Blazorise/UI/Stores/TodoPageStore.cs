@@ -13,29 +13,22 @@ using Stl.Fusion.Blazor;
 using Templates.Blazor2.Abstractions;
 using Newtonsoft.Json;
 using Stl.CommandR;
+using System.ComponentModel;
+using Microsoft.AspNetCore.Components;
 
 namespace Templates.Blazor2.UI.Stores
 {
-    public class ExceptionStore
-    {
-        public ExceptionStore(Exception ex)
-        {
-            Message = ex.Message;
-        }
-
-        public string Message { get; set; }
-    }
-
     [Observable]
     public class TodoPageStore
     {
         protected ITodoService TodoService = default!;
         protected LiveStateStore<GetTodoPageResponse> F;
+        protected ComponentBase Component;
 
-        public string? GetTodoPageResponseAsJson { get; set; }
+        public string? PageResponseAsJson { get; set; }
         public ExceptionStore? FusionQueryException { get; set; }
         public ExceptionStore? FusionCommandException { get; set; }
-        public GetTodoPageRequest GetTodoPageRequest { get; set; }
+        public GetTodoPageRequest PageRequest { get; set; }
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
         public TodoPageStore(ISharedState sharedState,
@@ -47,7 +40,7 @@ namespace Templates.Blazor2.UI.Stores
             if (todoService == null)
                 throw new ArgumentNullException(nameof(todoService));
             TodoService = todoService;
-            SetGetTodoPageRequest(new GetTodoPageRequest { PageRef = 5 + 1, PageSize = 5 });
+            SetGetTodoPageRequest(new GetTodoPageRequest { PageRef = new PageRef<string>(Count: 5) });
 
             F = new LiveStateStore<GetTodoPageResponse>(sharedState, stateFactory, session, commander, ComputeState);
             F.OnLiveStateChanged += F_OnLiveStateChanged;
@@ -55,53 +48,56 @@ namespace Templates.Blazor2.UI.Stores
 
         private void F_OnLiveStateChanged(object? sender, FusionStateStatusEnum status)
         {
-            Debug.WriteLine($"OnLiveStateChanged {status}. Todos: {F.LiveState?.UnsafeValue?.Todos.Length} ");
-            if (status == FusionStateStatusEnum.InSync)
-                SetGetTodoPageResponse(F.LiveState?.UnsafeValue);
+            Debug.WriteLine($"OnLiveStateChanged {status}. Todos: {F.LiveState?.UnsafeValue?.Todos?.Length} ");
+            if (status == FusionStateStatusEnum.InSync && F.LiveState?.HasValue == true)
+                SetGetTodoPageResponse(F.LiveState?.Value);
             UpdateQueryException();
             SetFusionStatus(status);
         }
 
         [Computed]
-        public GetTodoPageResponse? GetTodoPageResponse {
+        public GetTodoPageResponse? PageResponse {
             get {
-                if (GetTodoPageResponseAsJson == null)
+                if (PageResponseAsJson == null)
                     return null;
                 else
-                    return JsonConvert.DeserializeObject<GetTodoPageResponse>(GetTodoPageResponseAsJson);
+                    return JsonConvert.DeserializeObject<GetTodoPageResponse>(PageResponseAsJson);
             }
         }
 
         [Computed]
-        public DateTime? LastStateUpdateTimeUtc => GetTodoPageResponse?.LastUpdatedUtc;
+        public DateTime? LastStateUpdateTimeUtc => PageResponse?.LastUpdatedUtc;
 
         [Computed]
-        public bool HasMore => GetTodoPageResponse?.HasMore == true;
+        public bool HasMore => PageResponse?.HasMore == true;
 
         [Action]
         public void SetGetTodoPageResponse(GetTodoPageResponse? getTodoPageResponse)
         {
             if (getTodoPageResponse == null)
-                GetTodoPageResponseAsJson = null;
+                PageResponseAsJson = null;
             else
                 // Consider to pass in the raw JSON from the RestClient when working in WebAssembly
                 // saving the serialization
                 // We do the serialization so that all the derived values are cached and matched by value
                 // automatically saving rerenders if the object tree shape stays similar
-                GetTodoPageResponseAsJson = JsonConvert.SerializeObject(getTodoPageResponse);
+                PageResponseAsJson = JsonConvert.SerializeObject(getTodoPageResponse);
         }
 
         protected async Task<GetTodoPageResponse> ComputeState(CancellationToken cancellationToken)
         {
-            var response = await TodoService.GetTodoPage(F.Session, GetTodoPageRequest, cancellationToken);
+            var response = await TodoService.GetTodoPage(F.Session, PageRequest, cancellationToken);
             return response;
         }
 
         [Action]
         public void LoadMore()
         {
-            GetTodoPageRequest.PageSize *= 2;
-            F.Requery();  // See if we can make an autorunner for this
+            if (PageRequest?.PageRef == null)
+                return;
+
+            PageRequest.PageRef = PageRequest.PageRef with { Count = PageRequest.PageRef.Count * 2 };
+            F.TryInvalidate();  // See if we can make an autorunner for this
         }
 
         [Action]
@@ -139,7 +135,7 @@ namespace Templates.Blazor2.UI.Stores
             UpdateCommandException(null);
             try {
                 await F.Commander.Call(command, cancellationToken: default);
-                //TryInvalidate();
+                F.TryInvalidate();
             }
             catch (Exception e) {
                 UpdateCommandException(e);
@@ -160,7 +156,7 @@ namespace Templates.Blazor2.UI.Stores
         [Action]
         public void UpdateQueryException()
         {
-            if (FusionQueryException == null && F.LiveState?.Error == null)
+            if (FusionQueryException == null && F.LiveState?.HasError != true)
                 return;
 
             if (F.LiveState?.Error != null)
@@ -173,12 +169,18 @@ namespace Templates.Blazor2.UI.Stores
         public void SetFusionStatus(FusionStateStatusEnum status)
         {
             FusionStateStatus = status;
+            Debug.WriteLine($"Fusion state status: {status}");
         }
 
         [Action]
         public void SetGetTodoPageRequest(GetTodoPageRequest request)
         {
-            GetTodoPageRequest = request;
+            PageRequest = request;
+        }
+
+        public void SetComponent(ComponentBase component )
+        {
+            Component = component;
         }
     }
 }

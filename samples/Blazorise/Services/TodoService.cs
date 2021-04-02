@@ -76,14 +76,16 @@ namespace Templates.Blazor2.Services
 
         public virtual async Task<GetTodoPageResponse> GetTodoPage(Session session, GetTodoPageRequest request, CancellationToken cancellationToken = default)
         {
-            var items = await List(session, request.PageRef ?? new PageRef<string>(), cancellationToken);
+            var pageRef = request.PageRef ?? new PageRef<string>(Count: 5);
+            var getOneMorePagePlusOne = pageRef with { Count = pageRef.Count + 1 };
+            var items = await List(session, getOneMorePagePlusOne, cancellationToken);
             var response = new GetTodoPageResponse {
-                HasMore = items.Length > request.PageSize,
+                HasMore = items.Length > pageRef.Count,
                 LastUpdatedUtc = DateTime.UtcNow,
                 TotalItems = 100, // todo: make computed method to get count
             };
             if (response.HasMore)
-                items = items[0..request.PageSize];
+                items = items[0..pageRef.Count];
             response.Todos = items;
             return response;
         }

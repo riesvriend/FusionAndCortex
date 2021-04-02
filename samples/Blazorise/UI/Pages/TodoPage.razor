@@ -11,6 +11,10 @@
 @inject AppStore appStore
 @inject TodoPageStore todoPageStore
 
+@{
+    todoPageStore.SetComponent(this); // hack to get correct SyncContext
+    Debug.WriteLine("Rendering TodoPage");
+}
 <h1>Todo List</h1>
 
 <FusionStateStatusBadge FusionStateStatus="@todoPageStore.FusionStateStatus" />
@@ -30,33 +34,39 @@
         <Row>
             <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnTablet">
                 @{
-                    var todos = todoPageStore.GetTodoPageResponse?.Todos;
-                    if (todos != null)
-                        foreach (var todo in todos)
-                        {
-                            <Addons Margin="Margin.Is3.OnY">
-                                <Addon AddonType="AddonType.Start">
-                                    <AddonLabel>
-                                        <Blazorise.Icon Name="@(todo.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
-                                                        @onclick="_ => InvertDone(todo)" />
-                                    </AddonLabel>
-                                </Addon>
-                                <TextEdit TextChanged="text => UpdateTitle(todo, text)" ChangeTextOnKeyPress="false"
-                                          Text="@todo.Title" />
-                                <Addon AddonType="AddonType.End">
-                                    <Button Clicked="_ => Remove(todo)" Color="Color.Warning">
-                                        <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
-                                    </Button>
-                                </Addon>
-                            </Addons>
-                        }
-
-                    if (todoPageStore.HasMore)
+                    var todos = todoPageStore.PageResponse?.Todos;
+                }
+                @if (todos == null || todos.Length == 0)
+                {
+                    <span>No Todos</span>
+                }
+                else
+                {
+                    foreach (var todo in todos)
                     {
-                        <Button Clicked="_ => LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
-                            Load more <Blazorise.Icon Name="FontAwesomeIcons.AngleDoubleDown" />
-                        </Button>
+                        <Addons Margin="Margin.Is3.OnY">
+                            <Addon AddonType="AddonType.Start">
+                                <AddonLabel>
+                                    <Blazorise.Icon Name="@(todo.IsDone ? FontAwesomeIcons.CheckSquare : FontAwesomeIcons.Square)"
+                                                    @onclick="_ => InvertDone(todo)" />
+                                </AddonLabel>
+                            </Addon>
+                            <TextEdit TextChanged="text => UpdateTitle(todo, text)" ChangeTextOnKeyPress="false"
+                                      Text="@todo.Title" />
+                            <Addon AddonType="AddonType.End">
+                                <Button Clicked="_ => Remove(todo)" Color="Color.Warning">
+                                    <Blazorise.Icon Name="FontAwesomeIcons.Minus" />
+                                </Button>
+                            </Addon>
+                        </Addons>
                     }
+                }
+
+                @if (todoPageStore.HasMore)
+                {
+                    <Button Clicked="_ => LoadMore()" Color="Color.Primary" Margin="Margin.Is3.OnY">
+                        Load more <Blazorise.Icon Name="FontAwesomeIcons.AngleDoubleDown" />
+                    </Button>
                 }
 
                 <Form @onsubmit="_ => Create()" Margin="Margin.Is3.OnY">
