@@ -17,10 +17,9 @@ namespace Templates.Blazor2.UI.Stores
     public enum FusionStateStatusEnum { Loading, Updating, UpdatePending, InSync };
 
     /// <summary>
-    /// TODO: Use composition instead of inheritance: allow a Cortrex store to keep one or more
-    /// FusionLiveStates in a wrapper class, no need to inherit just forward the relevant events
+    /// Wrapper for use in a Cortrex store to keep subscribed to one or more
+    /// FusionLiveStates
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class LiveStateStore<T> : IDisposable
     {
         protected IStateFactory StateFactory;
@@ -29,7 +28,7 @@ namespace Templates.Blazor2.UI.Stores
         public ICommander Commander;
         private bool _disposedValue;
         protected Func<CancellationToken, Task<T>> ComputeState;
-        protected Action<IState, StateEventKind>? HandleStateChangedInternal { get; set; }
+        protected Action<IState, StateEventKind> HandleStateChangedInternal { get; set; }
         public ILiveState<T>? LiveState { get; set; }
         public FusionStateStatusEnum FusionStateStatus { get; set; }
 
@@ -50,7 +49,9 @@ namespace Templates.Blazor2.UI.Stores
                 //if (eventKind == StateEventKind.Updated)
                 OnLiveStateChanged?.Invoke(this, status);
             };
-            EnsureCreate();
+
+            LiveState = CreateState();
+            ((IState)LiveState).AddEventHandler(StateEventKind.All, HandleStateChangedInternal);
         }
 
         public event EventHandler<FusionStateStatusEnum>? OnLiveStateChanged;
@@ -69,52 +70,9 @@ namespace Templates.Blazor2.UI.Stores
             return status;
         }
 
-        public void EnsureCreate()
-        {
-            if (LiveState != null)
-                return;
-
-            LiveState = CreateState();
-            ((IState)LiveState).AddEventHandler(StateEventKind.All, HandleStateChangedInternal);
-        }
-
-        protected LiveComponentOptions Options { get; set; } =
-            LiveComponentOptions.SynchronizeComputeState
-            | LiveComponentOptions.InvalidateOnParametersSet;
-
         protected ILiveState<T> CreateState()
         {
-            if (0 != (Options & LiveComponentOptions.SynchronizeComputeState)) {
-                var state = StateFactory!.NewLive<T>(
-                    ConfigureState,
-                    async (_, ct) => {
-                        // Synchronizes ComputeStateAsync call as per:
-                        // https://github.com/servicetitan/Stl.Fusion/issues/202
-                        var ts = TaskSource.New<T>(false);
-                        await InvokeAsync(async () => {
-                            try {
-                                ts.TrySetResult(await ComputeState(ct));
-                            }
-                            catch (OperationCanceledException) {
-                                ts.TrySetCanceled();
-                            }
-                            catch (Exception e) {
-                                ts.TrySetException(e);
-                            }
-                        });
-                        return await ts.Task.ConfigureAwait(false);
-                    }, this);
-                return state;
-            }
-
-            return StateFactory!.NewLive<T>(ConfigureState, (_, ct) => ComputeState(ct), this);
-        }
-
-        protected async Task InvokeAsync(Func<Task> thedelegate)
-        {
-            // TODO: use context from Cortex/BlazorComponent shared state
-            // We can use the <App> component instance for InvokeAsync as its globally available
-            await thedelegate();
+            return StateFactory.NewLive<T>(ConfigureState, computer: (_, ct) => ComputeState(ct), argument: this);
         }
 
         protected virtual void ConfigureState(LiveState<T>.Options options) { }

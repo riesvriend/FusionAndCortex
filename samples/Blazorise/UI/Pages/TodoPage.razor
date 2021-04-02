@@ -3,16 +3,12 @@
 @using Templates.Blazor2.Abstractions
 @using Cortex.Net.Blazor
 @using Templates.Blazor2.UI.Stores
-@inject ITodoService Todos
-@inject Session Session
-@inject AuthStateProvider AuthStateProvider
-
 @attribute [Observer]
+@inject AuthStateProvider AuthStateProvider
 @inject AppStore appStore
 @inject TodoPageStore todoPageStore
 
 @{
-    todoPageStore.SetComponent(this); // hack to get correct SyncContext
     Debug.WriteLine("Rendering TodoPage");
 }
 <h1>Todo List</h1>
@@ -34,11 +30,18 @@
         <Row>
             <Column ColumnSize="ColumnSize.Is6.OnDesktop.Is12.OnTablet">
                 @{
-                    var todos = todoPageStore.PageResponse?.Todos;
+                    // TODO: The computed value 'PageResponse' is null when the render is triggered by Fusion's
+                    //          AuthState param below
+                    var response = todoPageStore.PageResponse;
+                    var todos = response?.Todos;
                 }
-                @if (todos == null || todos.Length == 0)
+                @if (todos == null)
                 {
-                    <span>No Todos</span>
+                    <span>Null Todos</span>
+                }
+                else if (todos.Length == 0)
+                {
+                    <span>0 Todos</span>
                 }
                 else
                 {
@@ -90,7 +93,7 @@
     // AuthState property below seemingly does nothing, right?
     // But try to comment out this line & sign-in + sign-out. See the error badge stays there for a while now?
     // Check your explanation on our Discord: https://discord.gg/EKEwv6d
-    [CascadingParameter] protected Task<AuthState> AuthState { get; set; } = null!;
+    // [CascadingParameter] protected Task<AuthState> AuthState { get; set; } = null!;
 
     private void LoadMore()
     {

@@ -18,12 +18,16 @@ using Microsoft.AspNetCore.Components;
 
 namespace Templates.Blazor2.UI.Stores
 {
+    /// <summary>
+    /// [Action] methods synchronize to the Blazor component's SynchronizationContext via the
+    ///   ISharedState instance that is injected in the constructor. Therefore all updates
+    ///   triggered by Fusion are done in Action methods 
+    /// </summary>
     [Observable]
     public class TodoPageStore
     {
         protected ITodoService TodoService = default!;
         protected LiveStateStore<GetTodoPageResponse> F;
-        protected ComponentBase Component;
 
         public string? PageResponseAsJson { get; set; }
         public ExceptionStore? FusionQueryException { get; set; }
@@ -55,13 +59,23 @@ namespace Templates.Blazor2.UI.Stores
             SetFusionStatus(status);
         }
 
+        protected Task<GetTodoPageResponse> ComputeState(CancellationToken cancellationToken) =>
+            TodoService.GetTodoPage(F.Session, PageRequest, cancellationToken);
+
         [Computed]
         public GetTodoPageResponse? PageResponse {
             get {
+                GetTodoPageResponse? response;
+
                 if (PageResponseAsJson == null)
-                    return null;
-                else
-                    return JsonConvert.DeserializeObject<GetTodoPageResponse>(PageResponseAsJson);
+                    response = null;
+                else {
+                    response = JsonConvert.DeserializeObject<GetTodoPageResponse>(PageResponseAsJson);
+                    if (response == null)
+                        Debugger.Break();
+                }
+
+                return response;
             }
         }
 
@@ -82,20 +96,13 @@ namespace Templates.Blazor2.UI.Stores
                 // We do the serialization so that all the derived values are cached and matched by value
                 // automatically saving rerenders if the object tree shape stays similar
                 PageResponseAsJson = JsonConvert.SerializeObject(getTodoPageResponse);
-        }
 
-        protected async Task<GetTodoPageResponse> ComputeState(CancellationToken cancellationToken)
-        {
-            var response = await TodoService.GetTodoPage(F.Session, PageRequest, cancellationToken);
-            return response;
+            Debug.WriteLine($"PageResponseAsJson: {PageResponseAsJson}");
         }
 
         [Action]
         public void LoadMore()
         {
-            if (PageRequest?.PageRef == null)
-                return;
-
             PageRequest.PageRef = PageRequest.PageRef with { Count = PageRequest.PageRef.Count * 2 };
             F.TryInvalidate();  // See if we can make an autorunner for this
         }
@@ -176,11 +183,6 @@ namespace Templates.Blazor2.UI.Stores
         public void SetGetTodoPageRequest(GetTodoPageRequest request)
         {
             PageRequest = request;
-        }
-
-        public void SetComponent(ComponentBase component )
-        {
-            Component = component;
         }
     }
 }
