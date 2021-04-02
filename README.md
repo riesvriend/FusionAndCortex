@@ -1,4 +1,4 @@
-Playground project combining [Stl.Fusion](https://github.com/servicetitan/Stl.Fusion) and [Cortex.Net](https://github.com/jspuij/Cortex.Net).
+Proof of concept project combining [Stl.Fusion](https://github.com/servicetitan/Stl.Fusion) and [Cortex.Net](https://github.com/jspuij/Cortex.Net).
 
 See the project [Blazorise](https://github.com/riesvriend/FusionAndCortex/tree/master/samples/Blazorise). It is an adaptation of Fusion's Blazorise todo list sample.
 
